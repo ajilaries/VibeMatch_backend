@@ -1,37 +1,49 @@
-from fastapi import APIRouter
-from fastapi import HTTPException
-from app.schema.login_schema import LoginRequest
-from sqlalchemy.orm import Session
-from app.schema.user_schema import UserCreate
-from app.models.user_model import User
+from fastapi import APIRouter, HTTPException
 from app.database import SessionLocal
-router=APIRouter()
+from app.models.user_model import User
 
+router = APIRouter()
 
-@router.post("/login")
-def login(user):
+# SIGNUP
+@router.post("/signup")
+def signup(name: str, email: str, password: str):
+
     db = SessionLocal()
 
-    db_user = db.query(User).filter(User.email == user.email).first()
+    existing_user = db.query(User).filter(User.email == email).first()
 
-    if not db_user:
-        raise HTTPException(status_code=404, detail="User not found")
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
 
-    if db_user.password != user.password:
-        raise HTTPException(status_code=401, detail="Invalid password")
-
-    return {"message": "Login successful"}
-@router.post("/signup")
-def signup(user:UserCreate):
-    db:Session=SessionLocal()
-
-    new_user=User(
-        name=user.name,
-        email=user.email,
-        password=user.password
+    new_user = User(
+        name=name,
+        email=email,
+        password=password
     )
+
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
-    return {"message":"User created successfully"}
+    return {"message": "Signup successful"}
+
+
+# LOGIN
+@router.post("/login")
+def login(email: str, password: str):
+
+    db = SessionLocal()
+
+    user = db.query(User).filter(User.email == email).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if user.password != password:
+        raise HTTPException(status_code=401, detail="Incorrect password")
+
+    return {
+        "message": "Login successful",
+        "user_id": user.id,
+        "name": user.name
+    }

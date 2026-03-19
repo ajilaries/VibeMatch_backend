@@ -1,13 +1,10 @@
 from fastapi import FastAPI
-from app.database import engine
-from app.models.user_model import Base
+from app.database import engine, Base
+import app.models.user_model
 from app.routes import user_routes
 
-app=FastAPI()
+app = FastAPI()
 
 Base.metadata.create_all(bind=engine)
-app.include_router(user_routes.router)
 
-@app.get("/")
-def home():
-    return {"message":"Vibematch backend running"}
+app.include_router(user_routes.router)

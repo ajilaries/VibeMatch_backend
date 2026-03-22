@@ -5,6 +5,9 @@ from app.routes import user_routes
 from app.routes import like_routes
 from app.routes import connection_routes
 from app.routes import match_routes
+from app.routes import profile_routes
+from app.routes import discover_routes
+
 
 
 app = FastAPI()
@@ -15,3 +18,5 @@ app.include_router(user_routes.router)
 app.include_router(like_routes.router)
 app.include_router(connection_routes.router)
 app.include_router(match_routes.router)
+app.include_router(profile_routes.router)
+app.include_router(discover_routes.router)

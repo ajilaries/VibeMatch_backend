@@ -48,13 +48,33 @@ def login(data: LoginSchema, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if not verify_password(data.password,user.password):
-        raise HTTPException(status_code=-401,detail="incorrect password")
+    if not verify_password(data.password, user.password):
+        raise HTTPException(status_code=401, detail="Incorrect password")
+
     access_token = create_access_token(
         data={"user_id": user.id, "email": user.email}
     )
 
     return {
         "access_token": access_token,
-        "token_type": "bearer"
+        "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email
+        }
+    }
+
+@router.get("/profile")
+def get_profile(user_id:int,db:Session=Depends(get_db)):
+
+    user=db.query(User).filter(User.id==user_id).first()
+
+    if not user:
+        raise HTTPException(status_code=404,detail="user not found")
+    
+    return{
+        "id":user.id,
+        "name":user.name,
+        "email":user.email
     }

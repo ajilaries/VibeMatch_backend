@@ -1,22 +1,23 @@
-from fastapi import APIRouter, HTTPException,Depends
+from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user_model import User
 from app.schema.login_schema import LoginSchema
 from app.schema.user_schema import UserSchema
 from app.utils.jwt_handler import create_access_token
-from app.utils.password_handler import hash_password,verify_password
+from app.utils.password_handler import hash_password, verify_password
 
-router=APIRouter()
+# ✅ create router ONLY ONCE
+router = APIRouter(prefix="/api", tags=["user"])
 
-#signup
-
+# signup
 @router.post("/signup")
 def signup(data:UserSchema,db:Session=Depends(get_db)):
+    print("Signup hit with:",data.email)
 
     existing_user=db.query(User).filter(User.email==data.email).first()
     if existing_user:
-        raise HTTPException(status_code=400,detail="Email already registered")
+        raise HTTPException(status_code=400,detail="email already registered")
     
     hashed_password=hash_password(data.password)
 
@@ -24,7 +25,7 @@ def signup(data:UserSchema,db:Session=Depends(get_db)):
         username=data.username,
         email=data.email,
         password=hashed_password,
-        dob=data.bob,
+        dob=data.dob,
         bio=data.bio,
         location=data.location
     )
@@ -33,62 +34,49 @@ def signup(data:UserSchema,db:Session=Depends(get_db)):
     db.commit()
     db.refresh(new_user)
 
-    access_token=create_access_token(
-        data={"user_id":new_user.id,"email":new_user.email}
-    )
-    return {
-        "message":"signup successful",
-        "access_token":access_token,
-        "token_type":"bearer",
-        "user":{
-            "id":new_user.id,
-            "username":new_user.username,
-            "email":new_user.email
-        }
-    }
+    print("user saved with ID:",new_user.id)
 
-#login
-
+    return {"message":"ok"}
+# login
 @router.post("/login")
-def login(data:LoginSchema,db:Session=Depends(get_db)):
-    user=db(User).filter(User.email==data.email).first()
+def login(data: LoginSchema, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == data.email).first()
 
     if not user:
-        raise HTTPException(status_code=404,detail="User not found")
-    if not verify_password(data.password,user.password):
-        raise HTTPException(status_code=401,detail="Incorrect password")
+        raise HTTPException(status_code=404, detail="User not found")
+    if not verify_password(data.password, user.password):
+        raise HTTPException(status_code=401, detail="Incorrect password")
     
-    access_token=create_access_token(
-        data={"user_id":user.id,"email":user.email}
+    access_token = create_access_token(
+        data={"user_id": user.id, "email": user.email}
     )
 
-    return{
-        "access_token":access_token,
-        "token_type":"bearer",
-        "user":{
-            "id":user.id,
-            "username":user.username,
-            "email":user.email
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email
         }
     }
 
-#profile
-
+# profile
 @router.get("/profile/{user_id}")
-def get_profile(user_id:int,db:Session=Depends(get_db)):
-    user=db.query(User).filter(User.id==user_id).first()
+def get_profile(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
 
     if not user:
-        raise HTTPException(status_code=404,detail="User not found")
+        raise HTTPException(status_code=404, detail="User not found")
     
-    return{
-        "id":user.id,
-        "username":user.username,
-        "dob":user.dob,
-        "bio":user.bio,
-        "location":user.location,
-        "latitude":user.latitude,
-        "longitude":user.longitude,
-        "profile_image":user.profile_image,
-        "profile_video":user.profile_video
+    return {
+        "id": user.id,
+        "username": user.username,
+        "dob": user.dob,
+        "bio": user.bio,
+        "location": user.location,
+        "latitude": user.latitude,
+        "longitude": user.longitude,
+        "profile_image": user.profile_image,
+        "profile_video": user.profile_video
     }

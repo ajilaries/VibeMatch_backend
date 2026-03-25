@@ -5,52 +5,63 @@ from app.models.user_model import User
 from app.schema.login_schema import LoginSchema
 from app.schema.user_schema import UserSchema
 from app.utils.jwt_handler import create_access_token
-from app.utils.password_handler import hash_password
-from app.utils.password_handler import verify_password
-router = APIRouter()
+from app.utils.password_handler import hash_password, verify_password
 
-# SIGNUP
+# ✅ create router ONLY ONCE
+router = APIRouter(prefix="/api", tags=["user"])
+
+# signup
 @router.post("/signup")
-def signup(data: UserSchema, db: Session = Depends(get_db)):
+def signup(data:UserSchema,db:Session=Depends(get_db)):
+    print("Signup hit with:",data.email)
 
-    existing_user = db.query(User).filter(User.email == data.email).first()
-
+    existing_user=db.query(User).filter(User.email==data.email).first()
     if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(status_code=400,detail="email already registered")
+    
+    hashed_password=hash_password(data.password)
 
-    hashed_password = hash_password(data.password)
-
-    new_user = User(
-        name=data.name,
+    new_user=User(
+        username=data.username,
         email=data.email,
-        password=hashed_password
+        password=hashed_password,
+        dob=data.dob,
+        bio=data.bio,
+        location=data.location
     )
 
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
-    access_token = create_access_token(
-        data={"user_id": new_user.id, "email": new_user.email}
+    print("user saved with ID:",new_user.id)
+
+    #create access token
+
+    access_token=create_access_token(
+        data={"user_id":new_user.id,"email":new_user.email}
     )
 
+    #return token
     return {
-        "message": "Signup successful",
-        "access_token": access_token,
-        "token_type": "bearer"
+        "access_token":access_token,
+        "token_type":"bearer",
+        "user":{
+            "id":new_user.id,
+            "username":new_user.username,
+            "email":new_user.email
+        }
     }
-# LOGIN
+# login
 @router.post("/login")
 def login(data: LoginSchema, db: Session = Depends(get_db)):
-
     user = db.query(User).filter(User.email == data.email).first()
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-
     if not verify_password(data.password, user.password):
         raise HTTPException(status_code=401, detail="Incorrect password")
-
+    
     access_token = create_access_token(
         data={"user_id": user.id, "email": user.email}
     )
@@ -60,21 +71,7 @@ def login(data: LoginSchema, db: Session = Depends(get_db)):
         "token_type": "bearer",
         "user": {
             "id": user.id,
-            "name": user.name,
+            "username": user.username,
             "email": user.email
         }
-    }
-
-@router.get("/profile")
-def get_profile(user_id:int,db:Session=Depends(get_db)):
-
-    user=db.query(User).filter(User.id==user_id).first()
-
-    if not user:
-        raise HTTPException(status_code=404,detail="user not found")
-    
-    return{
-        "id":user.id,
-        "name":user.name,
-        "email":user.email
     }

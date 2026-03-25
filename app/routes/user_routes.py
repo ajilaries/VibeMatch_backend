@@ -36,7 +36,22 @@ def signup(data:UserSchema,db:Session=Depends(get_db)):
 
     print("user saved with ID:",new_user.id)
 
-    return {"message":"ok"}
+    #create access token
+
+    access_token=create_access_token(
+        data={"user_id":new_user.id,"email":new_user.email}
+    )
+
+    #return token
+    return {
+        "access_token":access_token,
+        "token_type":"bearer",
+        "user":{
+            "id":new_user.id,
+            "username":new_user.username,
+            "email":new_user.email
+        }
+    }
 # login
 @router.post("/login")
 def login(data: LoginSchema, db: Session = Depends(get_db)):

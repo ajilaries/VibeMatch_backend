@@ -75,23 +75,3 @@ def login(data: LoginSchema, db: Session = Depends(get_db)):
             "email": user.email
         }
     }
-
-# profile
-@router.get("/profile/{user_id}")
-def get_profile(user_id: int, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.id == user_id).first()
-
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    return {
-        "id": user.id,
-        "username": user.username,
-        "dob": user.dob,
-        "bio": user.bio,
-        "location": user.location,
-        "latitude": user.latitude,
-        "longitude": user.longitude,
-        "profile_image": user.profile_image,
-        "profile_video": user.profile_video
-    }

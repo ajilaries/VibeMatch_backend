@@ -4,7 +4,8 @@ from app.database import get_db
 from app.models.like import Like
 from app.models.match import Match
 
-router=APIRouter()
+router=APIRouter(prefix="/api")
+
 
 @router.post("/like")
 def like_user(receiver_id:int,sender_id:int,db:Session=Depends(get_db)):

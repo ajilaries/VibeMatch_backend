@@ -8,13 +8,17 @@ router = APIRouter(prefix="/api", tags=["Discover"])
 @router.get("/discover")
 def discover_users(db: Session = Depends(get_db)):
 
-    users = db.query(User).all()
+    users=db.query(User).all()
 
-    return [
-        {
-            "id": user.id,
-            "name": user.name,
-            "email": user.email
-        }
-        for user in users
-    ]
+    result=[]
+
+    for user in users:
+        result.append({
+            "id":user.id,
+            "username":user.username,
+            "bio":user.bio,
+            "profile_image":user.profile_image,
+            "location":user.location
+        })
+
+    return result
